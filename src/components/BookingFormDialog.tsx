@@ -7,23 +7,42 @@ import { DatePicker, } from '@mui/x-date-pickers/DatePicker';
 import { parseISO, } from 'date-fns';
 import type { Booking, BookingInput, } from '../features/bookings/types';
 import { toISODateOnly, } from '../lib/dates';
+import { useEffect } from 'react';
+
+const today = new Date();
+today.setHours(0, 0, 0, 0);
 
 const schema = z
   .object({
-    guestName: z.string().min(2, 'Guest name is required'),
-    startDate: z.date()
-      .refine(d => d instanceof Date && !Number.isNaN(d.getTime()), {
-        message: 'Start date is required',
-      }),
-    endDate: z.date()
-      .refine(d => d instanceof Date && !Number.isNaN(d.getTime()), {
-        message: 'End date is required',
-      }),
+    guestName: z.string()
+      .trim()
+      .nonempty('Guest name must be at least 2 characters')
+      .min(2, 'Guest name must be at least 2 characters'),
+
+    startDate: z.date().refine((d) => {
+      const date = new Date(d);
+      date.setHours(0, 0, 0, 0);
+      return date >= today;
+    }, {
+      message: 'Start date cannot be in the past',
+    }),
+    endDate: z.date(),
     notes: z.string().optional(),
   })
-  .refine((v) => v.endDate > v.startDate, {
-    message: 'End date must be after start date',
-    path: ['endDate'],
+  .superRefine((v, ctx) => {
+    if (v.startDate >= v.endDate) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Start date should be before end date',
+        path: ['startDate'],
+      });
+
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Start date should be before end date',
+        path: ['endDate'],
+      });
+    }
   });
 
 type FormValues = z.infer<typeof schema>;
@@ -53,6 +72,8 @@ export default function BookingFormDialog({
   const {
     control,
     register,
+    reset,
+    trigger,
     handleSubmit,
     formState: { errors, isSubmitting, isValid },
   } = useForm<FormValues>({
@@ -70,6 +91,19 @@ export default function BookingFormDialog({
     };
     onSubmit(input);
   });
+
+  useEffect(() => {
+    if (!open) {
+      return;
+    };
+  
+    reset({
+      guestName: initial?.guestName ?? '',
+      startDate: initial ? parseISO(initial.startDate) : new Date(),
+      endDate: initial ? parseISO(initial.endDate) :  new Date((new Date()).setDate((new Date()).getDate() + 1)),
+      notes: initial?.notes ?? '',
+    });
+  }, [open, initial, reset]);
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth='sm'>
@@ -98,7 +132,10 @@ export default function BookingFormDialog({
                 <DatePicker
                   label='Start date'
                   value={field.value}
-                  onChange={(d) => field.onChange(d)}
+                  onChange={(d) => {
+                    field.onChange(d);
+                    void trigger(['guestName', 'startDate', 'endDate']);
+                  }}
                   slotProps={{
                     textField: {
                       fullWidth: true,
@@ -117,7 +154,10 @@ export default function BookingFormDialog({
                 <DatePicker
                   label='End date'
                   value={field.value}
-                  onChange={(d) => field.onChange(d)}
+                  onChange={(d) => {
+                    field.onChange(d);
+                    void trigger(['guestName', 'startDate', 'endDate']);
+                  }}
                   slotProps={{
                     textField: {
                       fullWidth: true,
