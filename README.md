@@ -1,73 +1,93 @@
-# React + TypeScript + Vite
+# Bookings Management App
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A React + TypeScript application for managing bookings.
 
-Currently, two official plugins are available:
+This project was implemented as a technical assignment and demonstrates
+state management, form validation, date handling, and UI testing.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+---
 
-## React Compiler
+## Features
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- Create, view, edit and delete bookings
+- Form validation using React Hook Form + Zod
+- Date validation and utilities powered by date-fns
+- Prevents invalid date ranges
+- Prevents overlapping bookings
+- Client-side persistence using localStorage
+- Search with debounced filtering
+- UI tests implemented with Vitest + Testing Library
 
-## Expanding the ESLint configuration
+---
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## Tech Stack
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+- React 18
+- TypeScript
+- Vite
+- Redux Toolkit
+- Material UI
+- React Hook Form
+- Zod
+- date-fns
+- Vitest
+- @testing-library/react
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+---
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+## Validation Rules
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+- Guest name is required (minimum 2 characters)
+- Start date cannot be in the past
+- End date must be after start date
+- Bookings cannot overlap existing bookings
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+Validation is implemented on:
+- Form level (Zod schema)
+- Business logic level (Redux slice)
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+---
+
+## Project Structure
+
+src/
+├── app/                # Redux store and typed hooks  
+├── components/         # UI components and dialogs  
+├── features/bookings/  # Redux slice, selectors, types  
+├── lib/                # Date utilities and storage helpers  
+├── pages/              # Page-level components  
+├── __tests__/          # UI tests  
+
+---
+
+## Running the Project
+
+Install dependencies:
+
+npm install
+
+Start development server:
+
+npm run dev
+
+---
+
+## Running Tests
+
+npm run test
+
+Tests cover:
+
+- Base page rendering
+- Dialog open/close behavior
+- Create / Edit / Delete flows
+- Form validation states
+- Search filtering behavior
+
+---
+
+## Notes
+
+- The application is fully client-side.
+- Data is persisted in localStorage.
+- DatePicker is mocked in tests to ensure deterministic behavior.
