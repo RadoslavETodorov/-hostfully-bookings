@@ -2,7 +2,7 @@ import { render, waitForElementToBeRemoved,
 	waitFor, type RenderResult } from '@testing-library/react';
 import userEvent, { type UserEvent } from '@testing-library/user-event';
 import { Provider } from 'react-redux';
-import { describe, test, expect, vi, } from 'vitest';
+import { describe, test, expect, vi, beforeEach, } from 'vitest';
 
 import App from '../App';
 import { makeStore } from './testStore';
@@ -85,6 +85,10 @@ const page = {
 	cancelButton: (ui: RenderResult) => ui.getByRole('button', { name: /^cancel$/i }),
 	confirmDeleteButton: (ui: RenderResult) => ui.getByRole('button', { name: /^delete$/i }),
 };
+
+beforeEach(() => {
+	localStorage.clear();
+});
 
 describe('BookingsPage', () => {
 	test('renders base page', async () => {
@@ -191,5 +195,65 @@ describe('BookingsPage', () => {
 		await ctx.user.type(page.notesInput(ctx.ui), 'Optional notes');
 
 		expect(page.notesInput(ctx.ui)).toHaveValue('Optional notes');
+	});
+
+	test('view opens details dialog and close hides it', async () => {
+		const ctx = renderApp();
+	
+		await page.openDetailsForFirst(ctx);
+		expect(page.dialog(ctx.ui)).toBeInTheDocument();
+		expect(page.dialogTitleDetails(ctx.ui)).toBeInTheDocument();
+	
+		await ctx.user.click(page.closeButton(ctx.ui));
+		await waitForElementToBeRemoved(() => ctx.ui.queryByRole('dialog'));
+	});
+
+	test('edit opens dialog and shows Save button', async () => {
+		const ctx = renderApp();
+	
+		await page.openEditForFirst(ctx);
+		expect(page.dialog(ctx.ui)).toBeInTheDocument();
+		expect(page.dialogTitleEdit(ctx.ui)).toBeInTheDocument();
+		expect(page.saveButton(ctx.ui)).toBeInTheDocument();
+	});
+
+	test('delete opens confirm dialog and cancel closes it', async () => {
+		const ctx = renderApp();
+	
+		await page.openDeleteForFirst(ctx);
+		expect(page.dialog(ctx.ui)).toBeInTheDocument();
+		expect(ctx.ui.getByText(/delete booking/i)).toBeInTheDocument();
+	
+		await ctx.user.click(page.cancelButton(ctx.ui));
+		await waitForElementToBeRemoved(() => ctx.ui.queryByRole('dialog'));
+	});
+
+	test('delete confirm removes booking row from table', async () => {
+		const ctx = renderApp();
+
+		const demoName = 'Radoslav Todorov';
+		expect(ctx.ui.getByText(demoName)).toBeInTheDocument();
+	
+		await page.openDeleteForFirst(ctx);
+		expect(page.dialog(ctx.ui)).toBeInTheDocument();
+	
+		await ctx.user.click(page.confirmDeleteButton(ctx.ui));
+		await waitForElementToBeRemoved(() => ctx.ui.queryByRole('dialog'));
+	
+		expect(ctx.ui.queryByText(demoName)).toBeNull();
+	});
+
+	test('search filters table rows by guest name', async () => {
+		const ctx = renderApp();
+		const demoName = 'Radoslav Todorov';
+		expect(ctx.ui.getByText(demoName)).toBeInTheDocument();
+		await ctx.user.clear(page.searchInput(ctx.ui));
+		await ctx.user.type(page.searchInput(ctx.ui), 'zzzz-no-match');
+
+		await waitFor(() => {
+			expect(ctx.ui.getByText(/no bookings yet/i)).toBeInTheDocument();
+		});
+
+		expect(ctx.ui.queryByText(demoName)).toBeNull();
 	});
 });

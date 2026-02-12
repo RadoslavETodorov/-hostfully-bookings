@@ -9,9 +9,6 @@ import type { Booking, BookingInput, } from '../features/bookings/types';
 import { toISODateOnly, } from '../lib/dates';
 import { useEffect } from 'react';
 
-const today = new Date();
-today.setHours(0, 0, 0, 0);
-
 const schema = z
   .object({
     guestName: z.string()
@@ -19,13 +16,18 @@ const schema = z
       .nonempty('Guest name must be at least 2 characters')
       .min(2, 'Guest name must be at least 2 characters'),
 
-    startDate: z.date().refine((d) => {
-      const date = new Date(d);
-      date.setHours(0, 0, 0, 0);
-      return date >= today;
-    }, {
-      message: 'Start date cannot be in the past',
-    }),
+      startDate: z.date().refine((d) => {
+        const date = new Date(d);
+        date.setHours(0, 0, 0, 0);
+      
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+      
+        return date >= today;
+      }, {
+        message: 'Start date cannot be in the past',
+      }),
+      
     endDate: z.date(),
     notes: z.string().optional(),
   })

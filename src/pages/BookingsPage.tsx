@@ -1,5 +1,5 @@
-import { useMemo, useState, } from 'react';
-import { Box, Button, Stack, TextField, Alert, } from '@mui/material';
+import { useMemo, useState, useEffect , } from 'react';
+import { Box, Button, Stack, TextField, } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 
 import { useAppDispatch, useAppSelector, } from '../app/hooks';
@@ -18,9 +18,11 @@ export default function BookingsPage() {
   const lastError = useAppSelector(s => s.bookings.lastError);
 
   const [query, setQuery] = useState('');
+  const [debouncedQuery, setDebouncedQuery] = useState('');
+  const [submitted, setSubmitted] = useState(false);
 
   const filtered = useMemo(() => {
-    const trimmedQuery = query.trim().toLowerCase();
+    const trimmedQuery = debouncedQuery.trim().toLowerCase();
     if (!trimmedQuery) {
       return bookings;
     };
@@ -30,7 +32,7 @@ export default function BookingsPage() {
         (b.notes ?? '').toLowerCase().includes(trimmedQuery) ||
         b.startDate.includes(trimmedQuery) ||  b.endDate.includes(trimmedQuery)
     );
-  }, [bookings, query]);
+  }, [bookings, debouncedQuery]);
 
   const [detailsOpen, setDetailsOpen,] = useState(false);
   const [selected, setSelected,] = useState<Booking | null>(null);
@@ -66,15 +68,11 @@ export default function BookingsPage() {
   };
 
   const submitForm = (input: BookingInput) => {
+    setSubmitted(true);
     if (formMode === 'create') {
       dispatch(createBooking(input));
     } else if (selected) {
       dispatch(updateBooking({ id: selected.id, patch: input }));
-    };
-
-    const err = lastError;
-    if (!err) {
-      setFormOpen(false);
     };
   };
 
@@ -87,6 +85,24 @@ export default function BookingsPage() {
     setConfirmOpen(false);
     setToDelete(null);
   };
+
+  useEffect(() => {
+    const id = setTimeout(() => {
+      setDebouncedQuery(query);
+    }, 300);
+  
+    return () => clearTimeout(id);
+  }, [query]);
+
+  useEffect(() => {
+    if (!submitted) return;
+  
+    if (!lastError) {
+      setFormOpen(false);
+    }
+  
+    setSubmitted(false);
+  }, [submitted, lastError]);
 
   return (
     <Box>
@@ -110,16 +126,6 @@ export default function BookingsPage() {
           Create booking
         </Button>
       </Stack>
-
-      {
-        lastError
-          ? (
-              <Alert severity='error' sx={{ mb: 2 }}>
-                {lastError.message}
-              </Alert>
-            )
-          : null
-      }
 
       <BookingsTable
         bookings={filtered}
