@@ -60,6 +60,12 @@ src/
 
 ---
 
+## Assumptions
+
+- Dates are handled in local time (date-only, no time component)
+- All data is stored client-side (localStorage)
+- No backend or API integration was required for this assignment
+
 ## Running the Project
 
 Install dependencies:
